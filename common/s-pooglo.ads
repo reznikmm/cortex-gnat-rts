@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                    S Y S T E M . P A R A M E T E R S                     --
+--                   S Y S T E M . P O O L _ G L O B A L                    --
 --                                                                          --
---                                 B o d y                                  --
+--                                 S p e c                                  --
 --                                                                          --
---       Copyright  (C) 2016-2017 Free Software Foundation, Inc.            --
+--          Copyright (C) 1992-2011, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,51 +29,51 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This is the version for Cortex GNAT RTS.
+--  Storage pool corresponding to default global storage pool used for types
+--  for which no storage pool is specified.
 
-package body System.Parameters is
+with System;
+with System.Storage_Pools;
+with System.Storage_Elements;
 
-   function Adjust_Storage_Size (Size : Size_Type) return Size_Type is
-     (if Size = Unspecified_Size then
-        Default_Stack_Size
-      elsif Size < Minimum_Stack_Size then
-        Minimum_Stack_Size
-      else
-        Size);
+package System.Pool_Global is
+   pragma Elaborate_Body;
+   --  Needed to ensure that library routines can execute allocators
 
-   function Default_Stack_Size return Size_Type is (4096);  -- same as GPL
+   --  Allocation strategy:
 
-   function Minimum_Stack_Size return Size_Type is (768);
+   --    Call to malloc/free for each Allocate/Deallocate
+   --    No user specifiable size
+   --    No automatic reclaim
+   --    Minimal overhead
 
-   --  Secondary stack
+   --  Pool simulating the allocation/deallocation strategy used by the
+   --  compiler for access types globally declared.
 
-   Default_Secondary_Stack_Size : Size_Type
-   with
-     Volatile,
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_size";
-   --  Written by the GCC8 binder (unless otherwise specified, to
-   --  Runtime_Default_Sec_Stack_Size)
+   type Unbounded_No_Reclaim_Pool is new
+     System.Storage_Pools.Root_Storage_Pool with null record;
 
-   function Secondary_Stack_Size (Stack_Size : Size_Type) return Size_Type
-     is (if Default_Secondary_Stack_Size = 0
-         then (Stack_Size * 10) / 100  -- default is 10%
-         else Default_Secondary_Stack_Size);
+   overriding function Storage_Size
+     (Pool : Unbounded_No_Reclaim_Pool)
+      return System.Storage_Elements.Storage_Count;
 
-   --  Items referenced by the GCC8 binder, but not used; may need to
-   --  go to System.Secondary_Stack eventually.
+   overriding procedure Allocate
+     (Pool         : in out Unbounded_No_Reclaim_Pool;
+      Address      : out System.Address;
+      Storage_Size : System.Storage_Elements.Storage_Count;
+      Alignment    : System.Storage_Elements.Storage_Count);
 
-   Binder_Sec_Stacks_Count : Natural
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_binder_ss_count";
+   overriding procedure Deallocate
+     (Pool         : in out Unbounded_No_Reclaim_Pool;
+      Address      : System.Address;
+      Storage_Size : System.Storage_Elements.Storage_Count;
+      Alignment    : System.Storage_Elements.Storage_Count);
 
-   Default_Sized_SS_Pool : System.Address
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_pool";
+   --  Pool object used by the compiler when implicit Storage Pool objects are
+   --  explicitly referred to. For instance when writing something like:
+   --     for T'Storage_Pool use Q'Storage_Pool;
+   --  and Q'Storage_Pool hasn't been defined explicitly.
 
-end System.Parameters;
+   Global_Pool_Object : Unbounded_No_Reclaim_Pool;
+
+end System.Pool_Global;

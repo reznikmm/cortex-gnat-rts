@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                    S Y S T E M . P A R A M E T E R S                     --
+--                SYSTEM.STORAGE_POOLS.SUBPOOLS.FINALIZATION                --
 --                                                                          --
---                                 B o d y                                  --
+--                                 S p e c                                  --
 --                                                                          --
---       Copyright  (C) 2016-2017 Free Software Foundation, Inc.            --
+--          Copyright (C) 2011-2013, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,51 +29,20 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This is the version for Cortex GNAT RTS.
+pragma Compiler_Unit_Warning;
 
-package body System.Parameters is
+package System.Storage_Pools.Subpools.Finalization is
 
-   function Adjust_Storage_Size (Size : Size_Type) return Size_Type is
-     (if Size = Unspecified_Size then
-        Default_Stack_Size
-      elsif Size < Minimum_Stack_Size then
-        Minimum_Stack_Size
-      else
-        Size);
+   --  The pragma is needed because package System.Storage_Pools.Subpools which
+   --  is already preelaborated now depends on this unit.
 
-   function Default_Stack_Size return Size_Type is (4096);  -- same as GPL
+   pragma Preelaborate;
 
-   function Minimum_Stack_Size return Size_Type is (768);
+   procedure Finalize_And_Deallocate (Subpool : in out Subpool_Handle);
+   --  This routine performs the following actions:
+   --    1) Finalize all objects chained on the subpool's master
+   --    2) Remove the the subpool from the owner's list of subpools
+   --    3) Deallocate the doubly linked list node associated with the subpool
+   --    4) Call Deallocate_Subpool
 
-   --  Secondary stack
-
-   Default_Secondary_Stack_Size : Size_Type
-   with
-     Volatile,
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_size";
-   --  Written by the GCC8 binder (unless otherwise specified, to
-   --  Runtime_Default_Sec_Stack_Size)
-
-   function Secondary_Stack_Size (Stack_Size : Size_Type) return Size_Type
-     is (if Default_Secondary_Stack_Size = 0
-         then (Stack_Size * 10) / 100  -- default is 10%
-         else Default_Secondary_Stack_Size);
-
-   --  Items referenced by the GCC8 binder, but not used; may need to
-   --  go to System.Secondary_Stack eventually.
-
-   Binder_Sec_Stacks_Count : Natural
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_binder_ss_count";
-
-   Default_Sized_SS_Pool : System.Address
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_pool";
-
-end System.Parameters;
+end System.Storage_Pools.Subpools.Finalization;

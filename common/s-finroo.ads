@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                    S Y S T E M . P A R A M E T E R S                     --
+--                S Y S T E M . F I N A L I Z A T I O N _ R O O T           --
 --                                                                          --
---                                 B o d y                                  --
+--                                 S p e c                                  --
 --                                                                          --
---       Copyright  (C) 2016-2017 Free Software Foundation, Inc.            --
+--          Copyright (C) 1992-2012, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,51 +29,18 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This is the version for Cortex GNAT RTS.
+--  This unit provides the basic support for controlled (finalizable) types
 
-package body System.Parameters is
+package System.Finalization_Root is
+   pragma Preelaborate;
 
-   function Adjust_Storage_Size (Size : Size_Type) return Size_Type is
-     (if Size = Unspecified_Size then
-        Default_Stack_Size
-      elsif Size < Minimum_Stack_Size then
-        Minimum_Stack_Size
-      else
-        Size);
+   --  The base for types Controlled and Limited_Controlled declared in Ada.
+   --  Finalization.
 
-   function Default_Stack_Size return Size_Type is (4096);  -- same as GPL
+   type Root_Controlled is abstract tagged null record;
 
-   function Minimum_Stack_Size return Size_Type is (768);
+   procedure Adjust     (Object : in out Root_Controlled);
+   procedure Finalize   (Object : in out Root_Controlled);
+   procedure Initialize (Object : in out Root_Controlled);
 
-   --  Secondary stack
-
-   Default_Secondary_Stack_Size : Size_Type
-   with
-     Volatile,
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_size";
-   --  Written by the GCC8 binder (unless otherwise specified, to
-   --  Runtime_Default_Sec_Stack_Size)
-
-   function Secondary_Stack_Size (Stack_Size : Size_Type) return Size_Type
-     is (if Default_Secondary_Stack_Size = 0
-         then (Stack_Size * 10) / 100  -- default is 10%
-         else Default_Secondary_Stack_Size);
-
-   --  Items referenced by the GCC8 binder, but not used; may need to
-   --  go to System.Secondary_Stack eventually.
-
-   Binder_Sec_Stacks_Count : Natural
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_binder_ss_count";
-
-   Default_Sized_SS_Pool : System.Address
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_pool";
-
-end System.Parameters;
+end System.Finalization_Root;

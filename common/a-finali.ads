@@ -1,12 +1,16 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                         GNAT COMPILER COMPONENTS                         --
+--                         GNAT RUN-TIME COMPONENTS                         --
 --                                                                          --
---                    S Y S T E M . P A R A M E T E R S                     --
+--                     A D A . F I N A L I Z A T I O N                      --
 --                                                                          --
---                                 B o d y                                  --
+--                                 S p e c                                  --
 --                                                                          --
---       Copyright  (C) 2016-2017 Free Software Foundation, Inc.            --
+--          Copyright (C) 1992-2011, Free Software Foundation, Inc.         --
+--                                                                          --
+-- This specification is derived from the Ada Reference Manual for use with --
+-- GNAT. The copyright notice above, and the license provisions that follow --
+-- apply solely to the  contents of the part following the private keyword. --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,51 +33,41 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This is the version for Cortex GNAT RTS.
+pragma Warnings (Off);
+with System.Finalization_Root;
+pragma Warnings (On);
 
-package body System.Parameters is
+package Ada.Finalization is
+   pragma Pure;
+   --  Ada.Finalization is declared pure in Ada 2012 (AI05-0212)
 
-   function Adjust_Storage_Size (Size : Size_Type) return Size_Type is
-     (if Size = Unspecified_Size then
-        Default_Stack_Size
-      elsif Size < Minimum_Stack_Size then
-        Minimum_Stack_Size
-      else
-        Size);
+   pragma Preelaborate;
+   pragma Remote_Types;
+   --  The above apply in versions of Ada before Ada 2012
 
-   function Default_Stack_Size return Size_Type is (4096);  -- same as GPL
+   type Controlled is abstract tagged private;
+   pragma Preelaborable_Initialization (Controlled);
 
-   function Minimum_Stack_Size return Size_Type is (768);
+   procedure Initialize (Object : in out Controlled);
+   procedure Adjust     (Object : in out Controlled);
+   procedure Finalize   (Object : in out Controlled);
 
-   --  Secondary stack
+   type Limited_Controlled is abstract tagged limited private;
+   pragma Preelaborable_Initialization (Limited_Controlled);
 
-   Default_Secondary_Stack_Size : Size_Type
-   with
-     Volatile,
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_size";
-   --  Written by the GCC8 binder (unless otherwise specified, to
-   --  Runtime_Default_Sec_Stack_Size)
+   procedure Initialize (Object : in out Limited_Controlled);
+   procedure Finalize   (Object : in out Limited_Controlled);
 
-   function Secondary_Stack_Size (Stack_Size : Size_Type) return Size_Type
-     is (if Default_Secondary_Stack_Size = 0
-         then (Stack_Size * 10) / 100  -- default is 10%
-         else Default_Secondary_Stack_Size);
+private
+   package SFR renames System.Finalization_Root;
 
-   --  Items referenced by the GCC8 binder, but not used; may need to
-   --  go to System.Secondary_Stack eventually.
+   type Controlled is abstract new SFR.Root_Controlled with null record;
 
-   Binder_Sec_Stacks_Count : Natural
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_binder_ss_count";
+   --  In order to simplify the implementation, the mechanism in Process_Full_
+   --  View ensures that the full view is limited even though the parent type
+   --  is not.
 
-   Default_Sized_SS_Pool : System.Address
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_pool";
+   type Limited_Controlled is
+     abstract new SFR.Root_Controlled with null record;
 
-end System.Parameters;
+end Ada.Finalization;

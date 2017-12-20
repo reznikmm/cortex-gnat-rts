@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                    S Y S T E M . P A R A M E T E R S                     --
+--                     A D A . F I N A L I Z A T I O N                      --
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---       Copyright  (C) 2016-2017 Free Software Foundation, Inc.            --
+--          Copyright (C) 1992-2011, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,51 +29,48 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This is the version for Cortex GNAT RTS.
+package body Ada.Finalization is
 
-package body System.Parameters is
+   ------------
+   -- Adjust --
+   ------------
 
-   function Adjust_Storage_Size (Size : Size_Type) return Size_Type is
-     (if Size = Unspecified_Size then
-        Default_Stack_Size
-      elsif Size < Minimum_Stack_Size then
-        Minimum_Stack_Size
-      else
-        Size);
+   procedure Adjust (Object : in out Controlled) is
+      pragma Warnings (Off, Object);
+   begin
+      null;
+   end Adjust;
 
-   function Default_Stack_Size return Size_Type is (4096);  -- same as GPL
+   --------------
+   -- Finalize --
+   --------------
 
-   function Minimum_Stack_Size return Size_Type is (768);
+   procedure Finalize (Object : in out Controlled) is
+      pragma Warnings (Off, Object);
+   begin
+      null;
+   end Finalize;
 
-   --  Secondary stack
+   procedure Finalize (Object : in out Limited_Controlled) is
+      pragma Warnings (Off, Object);
+   begin
+      null;
+   end Finalize;
 
-   Default_Secondary_Stack_Size : Size_Type
-   with
-     Volatile,
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_size";
-   --  Written by the GCC8 binder (unless otherwise specified, to
-   --  Runtime_Default_Sec_Stack_Size)
+   ----------------
+   -- Initialize --
+   ----------------
 
-   function Secondary_Stack_Size (Stack_Size : Size_Type) return Size_Type
-     is (if Default_Secondary_Stack_Size = 0
-         then (Stack_Size * 10) / 100  -- default is 10%
-         else Default_Secondary_Stack_Size);
+   procedure Initialize (Object : in out Controlled) is
+      pragma Warnings (Off, Object);
+   begin
+      null;
+   end Initialize;
 
-   --  Items referenced by the GCC8 binder, but not used; may need to
-   --  go to System.Secondary_Stack eventually.
+   procedure Initialize (Object : in out Limited_Controlled) is
+      pragma Warnings (Off, Object);
+   begin
+      null;
+   end Initialize;
 
-   Binder_Sec_Stacks_Count : Natural
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_binder_ss_count";
-
-   Default_Sized_SS_Pool : System.Address
-   with
-     Export,
-     Convention => Ada,
-     External_Name => "__gnat_default_ss_pool";
-
-end System.Parameters;
+end Ada.Finalization;
