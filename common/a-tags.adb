@@ -854,17 +854,22 @@ package body Ada.Tags is
    -------------------------------
 
    procedure Register_Interface_Offset
-     (Prim_T       : Tag;
+     (This         : System.Address;
       Interface_T  : Tag;
       Is_Static    : Boolean;
       Offset_Value : SSE.Storage_Offset;
       Offset_Func  : Offset_To_Top_Function_Ptr)
    is
-      Prim_DT     : constant Dispatch_Table_Ptr := DT (Prim_T);
-      Iface_Table : constant Interface_Data_Ptr :=
-                      To_Type_Specific_Data_Ptr (Prim_DT.TSD).Interfaces_Table;
+      Prim_DT     : Dispatch_Table_Ptr;
+      Iface_Table : Interface_Data_Ptr;
 
    begin
+      --  "This" points to the primary DT and we must save Offset_Value in
+      --  the Offset_To_Top field of the corresponding dispatch table.
+
+      Prim_DT     := DT (To_Tag_Ptr (This).all);
+      Iface_Table := To_Type_Specific_Data_Ptr (Prim_DT.TSD).Interfaces_Table;
+
       --  Save Offset_Value in the table of interfaces of the primary DT.
       --  This data will be used by the subprogram "Displace" to give support
       --  to backward abstract interface type conversions.
@@ -951,7 +956,6 @@ package body Ada.Tags is
 
    procedure Set_Dynamic_Offset_To_Top
      (This         : System.Address;
-      Prim_T       : Tag;
       Interface_T  : Tag;
       Offset_Value : SSE.Storage_Offset;
       Offset_Func  : Offset_To_Top_Function_Ptr)
@@ -969,7 +973,7 @@ package body Ada.Tags is
       end if;
 
       Register_Interface_Offset
-        (Prim_T, Interface_T, False, Offset_Value, Offset_Func);
+        (This, Interface_T, False, Offset_Value, Offset_Func);
    end Set_Dynamic_Offset_To_Top;
 
    ----------------------
@@ -985,11 +989,11 @@ package body Ada.Tags is
       SSD (T).SSD_Table (Position).Kind := Value;
    end Set_Prim_Op_Kind;
 
-   -----------------
-   -- Is_Abstract --
-   -----------------
+   ----------------------
+   -- Type_Is_Abstract --
+   ----------------------
 
-   function Is_Abstract (T : Tag) return Boolean is
+   function Type_Is_Abstract (T : Tag) return Boolean is
       TSD_Ptr : Addr_Ptr;
       TSD     : Type_Specific_Data_Ptr;
 
@@ -1000,8 +1004,8 @@ package body Ada.Tags is
 
       TSD_Ptr := To_Addr_Ptr (To_Address (T) - DT_Typeinfo_Ptr_Size);
       TSD     := To_Type_Specific_Data_Ptr (TSD_Ptr.all);
-      return TSD.Is_Abstract;
-   end Is_Abstract;
+      return TSD.Type_Is_Abstract;
+   end Type_Is_Abstract;
 
    --------------------
    -- Unregister_Tag --

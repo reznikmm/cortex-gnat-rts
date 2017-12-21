@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---    Copyright (C) 1992-2011, 2016, 2017 Free Software Foundation, Inc.    --
+--       Copyright (C) 1992-2011, 2016, Free Software Foundation, Inc.      --
 --                                                                          --
 -- This specification is derived from the Ada Reference Manual for use with --
 -- GNAT. The copyright notice above, and the license provisions that follow --
@@ -36,6 +36,7 @@
 --  This file has been modified from the GCC 4.9.1 version for the
 --  Cortex GNAT RTS project.
 
+with System;
 with System.Storage_Elements;
 
 package Ada.Tags is
@@ -77,8 +78,8 @@ package Ada.Tags is
    function Interface_Ancestor_Tags (T : Tag) return Tag_Array;
    pragma Ada_05 (Interface_Ancestor_Tags);
 
-   function Is_Abstract (T : Tag) return Boolean;
-   pragma Ada_2012 (Is_Abstract);
+   function Type_Is_Abstract (T : Tag) return Boolean;
+   pragma Ada_2012 (Type_Is_Abstract);
 
    Tag_Error : exception;
 
@@ -110,7 +111,7 @@ private
    --                                    +-------------------+
    --                                    |   transportable   |
    --                                    +-------------------+
-   --                                    |    is_abstract    |
+   --                                    |  type_is_abstract |
    --                                    +-------------------+
    --                                    | needs finalization|
    --                                    +-------------------+
@@ -290,7 +291,7 @@ private
       --  for being used in remote calls as actuals for classwide formals or as
       --  return values for classwide functions.
 
-      Is_Abstract : Boolean;
+      Type_Is_Abstract : Boolean;
       --  True if the type is abstract (Ada 2012: AI05-0173)
 
       Needs_Finalization : Boolean;
@@ -502,18 +503,18 @@ private
    --  This procedure is used in s-finimp and is thus exported manually
 
    procedure Register_Interface_Offset
-     (Prim_T       : Tag;
+     (This         : System.Address;
       Interface_T  : Tag;
       Is_Static    : Boolean;
       Offset_Value : SSE.Storage_Offset;
       Offset_Func  : Offset_To_Top_Function_Ptr);
    --  Register in the table of interfaces of the tagged type associated with
-   --  Prim_T the offset of the record component associated with the progenitor
-   --  Interface_T (that is, the distance from "This" to the object component
-   --  containing the tag of the secondary dispatch table). In case of constant
-   --  offset, Is_Static is true and Offset_Value has such value. In case of
-   --  variable offset, Is_Static is false and Offset_Func is an access to
-   --  function that must be called to evaluate the offset.
+   --  "This" object the offset of the record component associated with the
+   --  progenitor Interface_T (that is, the distance from "This" to the object
+   --  component containing the tag of the secondary dispatch table). In case
+   --  of constant offset, Is_Static is true and Offset_Value has such value.
+   --  In case of variable offset, Is_Static is false and Offset_Func is an
+   --  access to function that must be called to evaluate the offset.
 
    procedure Register_Tag (T : Tag);
    --  Insert the Tag and its associated external_tag in a table for the sake
@@ -521,24 +522,20 @@ private
 
    procedure Set_Dynamic_Offset_To_Top
      (This         : System.Address;
-      Prim_T       : Tag;
       Interface_T  : Tag;
       Offset_Value : SSE.Storage_Offset;
       Offset_Func  : Offset_To_Top_Function_Ptr);
    --  Ada 2005 (AI-251): The compiler generates calls to this routine only
-   --  when initializing the Offset_To_Top field of dispatch tables of tagged
-   --  types that cover interface types whose parent type has variable size
-   --  components.
-   --
-   --  "This" is the object whose dispatch table is being initialized. Prim_T
-   --  is the primary tag of such object. Interface_T is the interface tag for
-   --  which the secondary dispatch table is being initialized. Offset_Value
-   --  is the distance from "This" to the object component containing the tag
-   --  of the secondary dispatch table (a zero value means that this interface
-   --  shares the primary dispatch table). Offset_Func references a function
-   --  that must be called to evaluate the offset at run time. This routine
-   --  also takes care of registering these values in the table of interfaces
-   --  of the type.
+   --  when initializing the Offset_To_Top field of dispatch tables associated
+   --  with tagged type whose parent has variable size components. "This" is
+   --  the object whose dispatch table is being initialized. Interface_T is the
+   --  interface for which the secondary dispatch table is being initialized,
+   --  and Offset_Value is the distance from "This" to the object component
+   --  containing the tag of the secondary dispatch table (a zero value means
+   --  that this interface shares the primary dispatch table). Offset_Func
+   --  references a function that must be called to evaluate the offset at
+   --  runtime. This routine also takes care of registering these values in
+   --  the table of interfaces of the type.
 
    procedure Set_Entry_Index (T : Tag; Position : Positive; Value : Positive);
    --  Ada 2005 (AI-345): Set the entry index of a primitive operation in T's
