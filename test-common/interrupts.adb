@@ -167,7 +167,6 @@ package body Interrupts is
         Atomic,
         Size    => 32,
         Address => System'To_Address (16#e000_ef00#);
-
    begin
       NVIC_STIR := Integer (IRQ);
    end Trigger_Interrupt;
