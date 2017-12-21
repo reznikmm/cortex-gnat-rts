@@ -245,7 +245,7 @@ package System.Standard_Library is
    --  --  A little procedure that just calls Abort_Undefer.all, for use in
    --  clean up procedures, which only permit a simple subprogram name.
 
-   --  procedure Adafinal;
+   procedure Adafinal;
    --  Performs the Ada Runtime finalization the first time it is invoked.
    --  All subsequent calls are ignored.
 

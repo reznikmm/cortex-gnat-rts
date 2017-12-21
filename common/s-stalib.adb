@@ -78,13 +78,14 @@ package body System.Standard_Library is
    -- Adafinal --
    --------------
 
-   --  procedure Adafinal is
-   --  begin
-   --     if not Runtime_Finalized then
-   --        Runtime_Finalized := True;
-   --        System.Soft_Links.Adafinal.all;
-   --     end if;
-   --  end Adafinal;
+   procedure Adafinal is
+   begin
+      null;
+      --  if not Runtime_Finalized then
+      --     Runtime_Finalized := True;
+      --     System.Soft_Links.Adafinal.all;
+      --  end if;
+   end Adafinal;
 
    -----------------
    -- Break_Start --
