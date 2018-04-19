@@ -14,7 +14,7 @@ even if not used.
 
 ### gcc6 ###
 
-Compatible with FSF GCC 6. Not maintained.
+Compatible with FSF GCC 6 and GNAT GPL 2016. Maintenance only.
 
 ### gcc7 ###
 
