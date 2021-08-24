@@ -1,2 +1,0 @@
---  Used to demonstrate that sequential elaboration can be invoked.
-pragma Partition_Elaboration_Policy (Sequential);
