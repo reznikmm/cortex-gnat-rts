@@ -29,6 +29,7 @@
 #include <queue.h>
 #include <semphr.h>
 #include <task.h>
+#include "soc/spinlock.h"
 
 const int _gnat_freertos_tick_rate = configTICK_RATE_HZ;
 
@@ -40,16 +41,19 @@ void _gnat_enable_interrupts(void) {
   taskENABLE_INTERRUPTS();
 }
 
+portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+
 void _gnat_enter_critical(void) {
-  taskENTER_CRITICAL();
+  taskENTER_CRITICAL(&myMutex);
 }
 
 void _gnat_exit_critical(void) {
-  taskEXIT_CRITICAL();
+  taskEXIT_CRITICAL(&myMutex);
 }
 
 void _gnat_yield_from_isr(int switch_required) {
-  portEND_SWITCHING_ISR(switch_required);
+  // portEND_SWITCHING_ISR(switch_required);
+  portYIELD_FROM_ISR(switch_required);
 }
 
 xQueueHandle _gnat_xQueueCreate(unsigned portBASE_TYPE uxQueueLength,
