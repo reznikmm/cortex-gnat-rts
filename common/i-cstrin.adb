@@ -74,10 +74,10 @@ package body Interfaces.C.Strings is
    --  compatible, so we directly import here the malloc and free routines.
 
    function Memory_Alloc (Size : size_t) return chars_ptr;
-   pragma Import (C, Memory_Alloc, "pvPortMalloc");
+   pragma Import (C, Memory_Alloc, "malloc");
 
    procedure Memory_Free (Address : chars_ptr);
-   pragma Import (C, Memory_Free, "vPortFree");
+   pragma Import (C, Memory_Free, "free");
 
    ---------
    -- "+" --

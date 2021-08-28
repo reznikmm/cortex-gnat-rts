@@ -27,12 +27,12 @@ package System.FreeRTOS.Memory is
    with
      Import,
      Convention => C,
-     External_Name => "pvPortMalloc";
+     External_Name => "malloc";
 
    procedure Free (Ptr : System.Address)
    with
      Import,
      Convention => C,
-     External_Name => "vPortFree";
+     External_Name => "free";
 
 end System.FreeRTOS.Memory;
