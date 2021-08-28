@@ -18,3 +18,9 @@ idf_component_register(SRCS "hello_world.c"
                             ".objs/hello_world.o"
                     INCLUDE_DIRS "."
                     REQUIRES esp32-gnat-rts)
+
+# Required for s-fretcb.ads
+idf_build_set_property(COMPILE_DEFINITIONS -DconfigUSE_APPLICATION_TASK_TAG=1 APPEND)
+# Required for xTaskCreate in s-fretas.adb
+idf_build_set_property(COMPILE_DEFINITIONS -DconfigSUPPORT_DYNAMIC_ALLOCATION=1 APPEND)
+

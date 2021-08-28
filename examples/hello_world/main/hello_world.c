@@ -1,6 +1,6 @@
-extern void main();
+extern void environment_task__create();
 
 void app_main(void)
 {
-  main();
+  environment_task__create();
 }

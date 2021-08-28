@@ -1,6 +1,8 @@
 with System;
+with Ada.Real_Time;
 
 procedure Hello_World is
+   use type Ada.Real_Time.Time;
 
    procedure puts
      (data : System.Address)
@@ -8,5 +10,11 @@ procedure Hello_World is
 
    Hello : String := "Hello from Ada!" & ASCII.NUL;
 begin
-  puts (Hello'Address);
+  for J in 1 .. 10 loop
+    puts (Hello'Address);
+    delay until Ada.Real_Time.Clock + Ada.Real_Time.Seconds (1);
+  end loop;
+
+  --  NOTE:
+  --  Make sure that main subprogram doen't return in a real project!
 end;
