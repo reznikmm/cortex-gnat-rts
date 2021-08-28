@@ -105,3 +105,16 @@ portBASE_TYPE _gnat_xSemaphoreGiveFromISR
    portBASE_TYPE *pxHigherPriorityTaskWoken) {
   return xSemaphoreGiveFromISR(xSemaphore, pxHigherPriorityTaskWoken);
 }
+
+
+/* xTaskCreate has `static inline` markers in IDF, so can't be linked */
+IRAM_ATTR BaseType_t xTaskCreate2
+  (TaskFunction_t pvTaskCode,
+   const char * const pcName,
+   const uint16_t usStackDepth,
+   void * const pvParameters,
+   UBaseType_t uxPriority,
+   TaskHandle_t * const pvCreatedTask) {
+  return xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask );
+}
+

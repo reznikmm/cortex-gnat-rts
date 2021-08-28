@@ -26,7 +26,7 @@ package body System.FreeRTOS.Tasks is
    --  from portmacro.h,
    --  portSTACK_TYPE is unsigned long (stack size units)
 
-   Stack_Unit_Size : constant := 4;
+   Stack_Unit_Size : constant := 1;
 
    function Create_Task
      (Code        : Task_Code;
@@ -52,7 +52,7 @@ package body System.FreeRTOS.Tasks is
         return Status_Code with
           Import,
           Convention => C,
-          External_Name => "xTaskCreate";
+          External_Name => "xTaskCreate2";
 
       Task_Name : constant String := Name & ASCII.NUL;
       Status : Status_Code := Fail;
