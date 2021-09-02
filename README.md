@@ -112,6 +112,11 @@ The `hello_world.c` main subprogram just calls `main` function (created by
 In turn `main` calls `Hello_Ada` procedure.
 The `Hello_Ada` outputs "Hello Ada!" with `puts` provided by FreeRTOS.
 
+## ESP32 peripherals
+
+The `esp32` directory contains a draft implementation for
+peripherals access library. The `examples/gpio` has a blinking LED demo.
+
 ## Maintainer
 
 [Max Reznik](https://github.com/reznikmm).

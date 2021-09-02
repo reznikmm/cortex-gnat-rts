@@ -3,8 +3,9 @@
 --  SPDX-License-Identifier: MIT
 -------------------------------------------------------------
 
-project Hello_World is
+project Blink is
    for Target use "xtensa-esp32-elf";
-   for Main use ("hello_world.adb");
+   for Main use ("blink.adb");
    for Object_Dir use ".objs";
-end Hello_World;
+   for Source_Dirs use (".", "../../../esp32/esp32");
+end Blink;

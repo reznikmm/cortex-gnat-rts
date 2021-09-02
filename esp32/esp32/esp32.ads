@@ -3,8 +3,6 @@
 --  SPDX-License-Identifier: MIT
 -------------------------------------------------------------
 
-project Hello_World is
-   for Target use "xtensa-esp32-elf";
-   for Main use ("hello_world.adb");
-   for Object_Dir use ".objs";
-end Hello_World;
+package ESP32 is
+   pragma Pure;
+end ESP32;
