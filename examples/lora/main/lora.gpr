@@ -5,7 +5,11 @@
 
 project LoRa is
    for Target use "xtensa-esp32-elf";
-   for Main use ("lora.adb");
+   for Main use ("main.adb");
    for Object_Dir use ".objs";
    for Source_Dirs use (".", "../../../esp32/esp32");
+
+   package Binder is
+      for Switches ("Ada") use ("-d8k");
+   end Binder;
 end LoRa;
