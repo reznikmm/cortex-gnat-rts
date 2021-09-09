@@ -64,6 +64,17 @@ package body Environment_Task is
      External_Name => "_environment_task_secondary_stack_size";
    pragma Weak_External (Environment_Task_Secondary_Stack_Size);
 
+   procedure App_Main
+   with
+     Export,
+     Convention => C,
+     External_Name => "app_main";
+
+   procedure App_Main is
+   begin
+      Create;
+   end App_Main;
+
    procedure Create is
       --  Will be overwritten by binder-generated code if the main
       --  program has pragma Priority.

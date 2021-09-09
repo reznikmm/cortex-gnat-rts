@@ -15,8 +15,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
      VERBATIM)
 endif()
 
-idf_component_register(SRCS "blink.c"
-                            ".objs/b__blink.o"
+idf_component_register(SRCS ".objs/b__blink.o"
                             ".objs/blink.o"
                             ".objs/esp32-gpio.o"
                             ".objs/esp32.o"

@@ -12,6 +12,7 @@ b__*.ad?
 
 .build*
 obj
+.objs
 test
 doc
 cortex-gnat-rts*
@@ -22,6 +23,7 @@ gnatinspect.db
 gpr_query.*
 
 local/
+examples/*/build/
 
 demos-arduino-due/debounce_hardware
 demos-arduino-due/debounce_software

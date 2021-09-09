@@ -23,12 +23,10 @@ location of Flash, RAM; clock initialization; interrupt naming) is in
 The Ada source is either original or based on FSF GCC (mainly 4.9.1, some
 later releases too).
 
-The boards supported are
+Any board with ESP32 should work. We have tested with
 
 * Wireless Stick (Gecko Board) by Heltec
-  * See `esp32/COPYING*` for licensing terms.
-  * Example in `examples/`.
-
+* TTGO T-Display ESP32 (Make sure to change LED pin to 2).
 
 The package is based on
 [Cortex-GNAT-RTS](https://github.com/simonjwright/cortex-gnat-rts)
@@ -107,8 +105,9 @@ Ada code into ESP-IDF application.
 
 The `hello_world` application is an ESP-IDF project.
 It requires `esp32-gnat-rts` component as dependency.
-The `hello_world.c` main subprogram just calls `main` function (created by
-`gnatbind`).
+The `app_main` subprogram called by FreeRTOS is declared in
+`environment_task.adb`. It creates an _environment task_ that
+calls `main` function (created by `gnatbind`).
 In turn `main` calls `Hello_Ada` procedure.
 The `Hello_Ada` outputs "Hello Ada!" with `puts` provided by FreeRTOS.
 

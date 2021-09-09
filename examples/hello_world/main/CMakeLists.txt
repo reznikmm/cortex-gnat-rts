@@ -13,8 +13,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
      VERBATIM)
 endif()
 
-idf_component_register(SRCS "hello_world.c"
-                            ".objs/b__hello_world.o"
+idf_component_register(SRCS ".objs/b__hello_world.o"
                             ".objs/hello_world.o"
                     INCLUDE_DIRS "."
                     REQUIRES esp32-gnat-rts)

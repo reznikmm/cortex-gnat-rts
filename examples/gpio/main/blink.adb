@@ -6,7 +6,9 @@
 with Ada.Real_Time;
 with ESP32.GPIO;
 
-procedure blink is
+procedure Blink
+  with No_Return
+is
    use type Ada.Real_Time.Time;
 
    Button : constant := 0;   --  Button pad
@@ -22,14 +24,15 @@ begin
         Direction => ESP32.GPIO.Input,
         Input     => ESP32.GPIO.None)));    --  for Get_Level
 
-   for J in 1 .. 10 loop
-      --  Turl LED if button is not pressed
-      ESP32.GPIO.Set_Level
-        (LED, (J mod 2 = 1) and ESP32.GPIO.Get_Level (Button));
+   loop
+      for J in 1 .. 10 loop
+         --  Turl LED if button is not pressed
+         ESP32.GPIO.Set_Level
+           (LED, (J mod 2 = 1) and ESP32.GPIO.Get_Level (Button));
 
-      delay until Ada.Real_Time.Clock + Ada.Real_Time.Seconds (1);
+         delay until Ada.Real_Time.Clock + Ada.Real_Time.Seconds (1);
+      end loop;
    end loop;
 
-  --  NOTE:
-  --  Make sure that main subprogram doen't return in a real project!
-end blink;
+   --  Make sure that main subprogram doen't return in a real project!
+end Blink;
