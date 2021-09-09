@@ -14,7 +14,9 @@ with ESP32.SPI;
 
 with Lora;
 
-procedure Main is
+procedure Main
+  with No_Return
+is
    use type Ada.Real_Time.Time;
 
    Environment_Task_Storage_Size : constant Natural := 4096
@@ -152,7 +154,7 @@ begin
    LoRa_SPI.Initialize (433_375_000);
    LoRa_SPI.Receive;
 
-   for J in 1 .. 10 loop
+   for J in 1 .. 1E9 loop
       --  Turl LED if button is not pressed
       ESP32.GPIO.Set_Level
         (LED, (J mod 2 = 1) and ESP32.GPIO.Get_Level (Button));

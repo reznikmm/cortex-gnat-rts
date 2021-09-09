@@ -18,8 +18,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
      VERBATIM)
 endif()
 
-idf_component_register(SRCS "lora.c"
-                            ".objs/b__main.o"
+idf_component_register(SRCS ".objs/b__main.o"
                             ".objs/lora.o"
                             ".objs/main.o"
                             ".objs/esp32-gpio.o"
