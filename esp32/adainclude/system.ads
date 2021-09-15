@@ -36,7 +36,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This file has been extensively modified for the Cortex GNAT RTS
+--  This file has been extensively modified for the ESP32 GNAT RTS
 --  project.
 
 pragma Profile (Ravenscar);
@@ -47,7 +47,8 @@ pragma Restrictions (No_Finalization);
 --  If pragma Restrictions (No_Recursion) is required, make it a
 --  configuration pragma.
 
---  pragma Restrictions (No_Implicit_Dynamic_Code) not applied; it
+pragma Restrictions (No_Implicit_Dynamic_Code);
+--  ESP32 has separate code/data memory regions, so
 --  forbids trampolines, which are needed for 'Unrestricted_Access,
 --  especially for foreign-convention subprograms.
 
@@ -111,8 +112,8 @@ package System is
 
    --  These declarations correspond to FreeRTOS as originally
    --  configured in STM Cube (thread priorities 0 .. 7), with
-   --  priorities 8 to 10 mapped to Cortex interrupt priorities 3
-   --  (lowest) to 1 (highest that can be used by ISRs that call
+   --  priorities 8 to 10 mapped to ESP32 interrupt priorities 1
+   --  (lowest) to 3 (medium, that can be used by ISRs that call
    --  interrupt-safe FreeRTOS API functions).
 
    Max_Priority           : constant Positive := 7;

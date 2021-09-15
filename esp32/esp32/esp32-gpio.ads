@@ -176,6 +176,15 @@ package ESP32.GPIO is
       VSPICS0);
    --  Signal configurable over IO_Mux
 
+   type Interrupt_Kind is
+     (Disabled,
+      Rising_Edge,
+      Falling_Edge,
+      Any_Edge,
+      Low_Level,
+      High_Level);
+   --  Interrupt type selection
+
    function Valid_IO_MUX_Signal
      (Pad : GPIO_Pad; IO_MUX : IO_MUX_Signal) return Boolean;
    --  Check if the Pad is configurable for given IO_MUX signal
@@ -191,7 +200,8 @@ package ESP32.GPIO is
                when Output =>
                   Output : Output_Signal;
                when Input =>
-                  Input : Input_Signal;
+                  Input     : Input_Signal;
+                  Interrupt : Interrupt_Kind := Disabled;
                when Disable =>
                   null;
             end case;
@@ -222,6 +232,19 @@ package ESP32.GPIO is
 
    function Get_Level (Pad : GPIO_Pad) return Boolean;
    --  Return input level of the Pad
+
+   type GPIO_Pad_Set is array (GPIO_Pad range <>) of Boolean
+     with Pack;
+
+   subtype GPIO_40_Set is GPIO_Pad_Set (GPIO_Pad'Range);
+
+   function Get_Interrupt_Status return GPIO_40_Set
+     with Inline;
+   --  Return interrupt status for each gpio pad
+
+   procedure Set_Interrupt_Status (Value : GPIO_40_Set)
+     with Inline;
+   --  Set interrupt status for each gpio pad
 
 private
 

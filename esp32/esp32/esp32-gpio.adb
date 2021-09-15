@@ -93,14 +93,6 @@ package body ESP32.GPIO is
    IO_MUX_REG_Array : array (IO_MUX_REG_Offset) of IO_MUX_REG
      with Address => System'To_Address (16#3ff49000#), Import, Volatile;
 
-   type Interrupt_Kind is
-     (Disabled,
-      Rising_Edge,
-      Falling_Edge,
-      Any_Edge,
-      Low_Level,
-      High_Level);
-
    type GPIO_PIN_REG is record
       Reserved_1       : Natural range 0 .. 0 := 0;
       PRO_CPU_NINT_ENA : Boolean;  --  PRO CPU non-maskable interrupt enable
@@ -188,11 +180,8 @@ package body ESP32.GPIO is
      (Natural range 0 .. 255) of GPIO_FUNC_OUT_SEL_CFG_REG
        with Address => System'To_Address ( 16#3FF44530#), Import, Volatile;
 
-   type GPIO_32_Set is array (GPIO_Pad range 0 .. 31) of Boolean
-     with Pack;
-
-   type GPIO_8_Set is array (GPIO_Pad range 32 .. 39) of Boolean
-     with Pack;
+   subtype GPIO_32_Set is GPIO_Pad_Set (GPIO_Pad range 0 .. 31);
+   subtype GPIO_8_Set is GPIO_Pad_Set (GPIO_Pad range 32 .. 39);
 
    GPIO_OUT_REG : GPIO_32_Set
      with Address => System'To_Address (16#3FF44004#), Import, Volatile;
@@ -250,8 +239,16 @@ package body ESP32.GPIO is
      with Address => System'To_Address (16#3FF44040#), Import, Volatile;
    --  GPI32-39 input value
 
-   function To_Set (Pad : GPIO_Pad) return GPIO_32_Set with Inline;
-   function To_Set (Pad : GPIO_Pad) return GPIO_8_Set with Inline;
+   GPIO_STATUS_REG : GPIO_32_Set
+     with Address => System'To_Address (16#3FF44044#), Import, Volatile;
+   --  GPIO0-31 interrupt status register
+
+   GPIO_STATUS1_REG : GPIO_8_Set
+     with Address => System'To_Address (16#3FF44050#), Import, Volatile;
+   --  GPI32-39 interrupt status register
+
+   function To_Set_32 (Pad : GPIO_Pad) return GPIO_32_Set with Inline;
+   function To_Set_8 (Pad : GPIO_Pad) return GPIO_8_Set with Inline;
 
    ---------------
    -- Configure --
@@ -292,9 +289,9 @@ package body ESP32.GPIO is
 
                --  Set the GPIO_ENABLE bit on
                if Pad <= 31 then
-                  GPIO_ENABLE_W1TS_REG :=  To_Set (Pad);
+                  GPIO_ENABLE_W1TS_REG :=  To_Set_32 (Pad);
                else
-                  GPIO_ENABLE1_W1TS_REG := To_Set (Pad);
+                  GPIO_ENABLE1_W1TS_REG := To_Set_8 (Pad);
                end if;
 
                --  For push/pull mode (default), clear PAD_DRIVER bit
@@ -310,14 +307,16 @@ package body ESP32.GPIO is
 
             end if;
          when Input =>
-            if Value.IO_MUX = GPIO_Matrix and Value.Input /= None then
-               --  Configure the GPIO_FUNCy_IN_SEL_CFG register corresponding
-               --  to peripheral signal Y in the GPIO Matrix
-               GPIO_FUNC_IN_SEL_CFG_REG_Array (Value.Input) :=
-                 (GPIO_SIG_IN_SEL      => True,  --  route through GPIO Matrix
-                  GPIO_FUNC_IN_INV_SEL => False,
-                  GPIO_FUNC_IN_SEL     => Pad,
-                  Reserved             => 0);
+            if Value.IO_MUX = GPIO_Matrix then
+               if Value.Input /= None then
+                  --  Configure the GPIO_FUNCy_IN_SEL_CFG register
+                  --  corresponding to peripheral signal Y in the GPIO Matrix
+                  GPIO_FUNC_IN_SEL_CFG_REG_Array (Value.Input) :=
+                    (GPIO_SIG_IN_SEL      => True,  --  go through GPIO Matrix
+                     GPIO_FUNC_IN_INV_SEL => False,
+                     GPIO_FUNC_IN_SEL     => Pad,
+                     Reserved             => 0);
+               end if;
 
                --  Set the GPIO_FUNCx_OEN_SEL bit in the GPIO_FUNCx_OUT_SEL_CFG
                --  register to force the pin's output state to be determined
@@ -328,6 +327,17 @@ package body ESP32.GPIO is
                   OUT_INV_SEL => False,
                   OUT_SEL     => GPIO_OUT,
                   Reserved    => 0);
+
+               --  Enable interrupts on APP CPU if needed
+               GPIO_PIN_REG_Array (Pad) :=
+                 (PRO_CPU_NINT_ENA => False,
+                  PRO_CPU_INT_ENA  => False,
+                  APP_CPU_NINT_ENA => False,
+                  APP_CPU_INT_ENA  => Value.Interrupt /= Disabled,
+                  WAKEUP_ENABLE    => False,
+                  INT_TYPE         => Value.Interrupt,
+                  PAD_DRIVER       => False,
+                  others           => 0);
             end if;
          when Disable =>
             null;
@@ -351,9 +361,9 @@ package body ESP32.GPIO is
       if Value.Direction /= Output then
          --  Clear GPIO_ENABLE to disable the output driver for the GPIO pad
          if Pad <= 31 then
-            GPIO_ENABLE_W1TC_REG :=  To_Set (Pad);
+            GPIO_ENABLE_W1TC_REG :=  To_Set_32 (Pad);
          else
-            GPIO_ENABLE1_W1TC_REG := To_Set (Pad);
+            GPIO_ENABLE1_W1TC_REG := To_Set_8 (Pad);
          end if;
       end if;
    end Configure;
@@ -369,6 +379,15 @@ package body ESP32.GPIO is
       end loop;
    end Configure_All;
 
+   --------------------------
+   -- Get_Interrupt_Status --
+   --------------------------
+
+   function Get_Interrupt_Status return GPIO_40_Set is
+   begin
+      return GPIO_STATUS_REG & GPIO_STATUS1_REG;
+   end Get_Interrupt_Status;
+
    ---------------
    -- Get_Level --
    ---------------
@@ -382,60 +401,19 @@ package body ESP32.GPIO is
       end if;
    end Get_Level;
 
-   -------------------
-   -- Set_Direction --
-   -------------------
+   --------------------------
+   -- Set_Interrupt_Status --
+   --------------------------
 
-   procedure Set_Direction
-     (Pad   : GPIO_Pad;
-      Value : Pad_Direction) is
+   procedure Set_Interrupt_Status (Value : GPIO_40_Set) is
    begin
-      if Value = Output then
-         GPIO_FUNC_OUT_SEL_CFG_REG_Array (GPIO_Pad'Pos (Pad)) :=
-           (OEN_INV_SEL => False,
-            OEN_SEL     => False,
-            OUT_INV_SEL => False,
-            OUT_SEL     => GPIO_OUT,
-            Reserved    => 0);
+      GPIO_STATUS_REG := Value (GPIO_32_Set'Range);
+      GPIO_STATUS1_REG := Value (GPIO_8_Set'Range);
+   end Set_Interrupt_Status;
 
-         if Pad <= 31 then
-            GPIO_ENABLE_W1TS_REG :=  To_Set (Pad);
-            --  GPIO_OUT_REG (Pad) := False;
-         else
-            GPIO_ENABLE1_W1TS_REG := To_Set (Pad);
-         end if;
-
-         GPIO_PIN_REG_Array (Pad) :=
-           (PRO_CPU_NINT_ENA => False,
-            PRO_CPU_INT_ENA  => False,
-            APP_CPU_NINT_ENA => False,
-            APP_CPU_INT_ENA  => False,
-            WAKEUP_ENABLE    => False,
-            INT_TYPE         => Disabled,
-            PAD_DRIVER       => False,
-            others           => 0);
-      elsif Pad <= 31 then
-         --  Disable output for Pad (0 .. 31)
-         GPIO_ENABLE_W1TC_REG :=  To_Set (Pad);
-      else
-         --  Disable output for Pad (32 .. 39)
-         GPIO_ENABLE1_W1TC_REG := To_Set (Pad);
-      end if;
-
-      IO_MUX_REG_Array (IO_MUX_REG_Map (Pad)) :=
-        (MCU_SEL => Pad_Function_3,
-         FUN_DRV => 0,
-         FUN_IE  => Value = Input,
-         FUN_WPU => False,
-         FUN_WPD => False,
-         MCU_DRV => 0,
-         MCU_IE => Value = Input,
-         MCU_WPU => False,
-         MCU_WPD => False,
-         SLP_SEL => False,
-         MCU_OE  => False,
-         Reserved => 0);
-   end Set_Direction;
+   ---------------
+   -- Set_Level --
+   ---------------
 
    procedure Set_Level
      (Pad   : GPIO_Pad;
@@ -443,42 +421,42 @@ package body ESP32.GPIO is
    begin
       if Pad <= 31 then
          if Value then
-            GPIO_OUT_W1TS_REG := To_Set (Pad);
+            GPIO_OUT_W1TS_REG := To_Set_32 (Pad);
          else
-            GPIO_OUT_W1TC_REG := To_Set (Pad);
+            GPIO_OUT_W1TC_REG := To_Set_32 (Pad);
          end if;
       else
          if Value then
-            GPIO_OUT1_W1TS_REG := To_Set (Pad);
+            GPIO_OUT1_W1TS_REG := To_Set_8 (Pad);
          else
-            GPIO_OUT1_W1TC_REG := To_Set (Pad);
+            GPIO_OUT1_W1TC_REG := To_Set_8 (Pad);
          end if;
       end if;
    end Set_Level;
 
-   ------------
-   -- To_Set --
-   ------------
+   ---------------
+   -- To_Set_32 --
+   ---------------
 
-   function To_Set (Pad : GPIO_Pad) return GPIO_32_Set is
+   function To_Set_32 (Pad : GPIO_Pad) return GPIO_32_Set is
       Result : GPIO_32_Set := (others => False);
    begin
       Result (Pad) := True;
       --  return GPIO_32_Set'(Pad => True, others => False);
       --  return (0 .. Pad - 1 => False) & True & (Pad + 1 .. 31 => False);
       return Result;
-   end To_Set;
+   end To_Set_32;
 
-   ------------
-   -- To_Set --
-   ------------
+   --------------
+   -- To_Set_8 --
+   --------------
 
-   function To_Set (Pad : GPIO_Pad) return GPIO_8_Set is
+   function To_Set_8 (Pad : GPIO_Pad) return GPIO_8_Set is
       Result : GPIO_8_Set := (others => False);
    begin
       Result (Pad) := True;
       return Result;
-   end To_Set;
+   end To_Set_8;
 
    -------------------------
    -- Valid_IO_MUX_Signal --

@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---    Copyright (C) 1992-2009, 2016-2018, Free Software Foundation, Inc.    --
+--    Copyright (C) 1992-2009, 2016-2021, Free Software Foundation, Inc.    --
 --                                                                          --
 -- This specification is derived from the Ada Reference Manual for use with --
 -- GNAT. The copyright notice above, and the license provisions that follow --
@@ -33,14 +33,14 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  Modified from the GCC 4.9.1 version for the Cortex GNAT RTS
---  project, for nRF51.
+--  Modified from the GCC 4.9.1 version for the ESP32 GNAT RTS
+--  project, for ESP32.
 
 with System;
 
 package Ada.Interrupts is
 
-   type Interrupt_ID is range 0 .. 25;
+   type Interrupt_ID is range 0 .. 68;
    --  Has to match System.Interrupts.Interrupt_ID.
 
    type Parameterless_Handler is access protected procedure;
