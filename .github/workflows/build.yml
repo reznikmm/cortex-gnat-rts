@@ -1,0 +1,78 @@
+on:
+  push:
+    branches:
+      - esp32-toolchain
+    tags:
+      - esp-*
+name: Build toolchain
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Get esp32-gnat-rts
+        uses: actions/checkout@v2
+      - name: Get crosstool-NG
+        uses: actions/checkout@v2
+        if: ${{ github.ref == 'refs/heads/esp32-toolchain' }}
+        with:
+          repository: espressif/crosstool-NG
+          path: esp/crosstool-NG
+          ref: esp-2021r1
+          submodules: recursive
+      - name: Get tagged crosstool-NG
+        uses: actions/checkout@v2
+        if: ${{ github.ref != 'refs/heads/esp32-toolchain' }}
+        with:
+          repository: espressif/crosstool-NG
+          path: esp/crosstool-NG
+          ref: ${{ github.ref }}
+          submodules: recursive
+      - name: Build toolchain with Ada
+        shell: bash
+        run: |
+          set -x
+          sudo apt update -y
+          sudo apt install -y git wget libncurses-dev flex bison gperf python3 python3-pip python3-setuptools python3-serial python3-cryptography python3-future python3-pyparsing python3-pyelftools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+          sudo apt install -y gawk gperf grep gettext python python-dev automake bison flex texinfo help2man libtool libtool-bin make
+          sudo apt install -y gnat-8 gcc-8 g++-8 unzip
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+          cd esp/crosstool-NG
+          ./bootstrap && ./configure --enable-local && make
+          ./ct-ng xtensa-esp32-elf
+          # set custom expat, because original expad was buggy and deleted
+          wget -O /tmp/expat-2.4.1.tar.bz2 https://github.com/libexpat/libexpat/releases/download/R_2_4_1/expat-2.4.1.tar.bz2
+          sed -i -e /CT_EXPAT_SRC_RELEASE/d -e /CT_EXPAT_V_2_2/d -e /CT_EXPAT_VERSION/d .config
+          cat >> .config <<-EOF
+          CT_EXPAT_SRC_CUSTOM=y
+          CT_EXPAT_CUSTOM_LOCATION="/tmp/expat-2.4.1.tar.bz2"
+          CT_EXPAT_VERY_NEW=y
+          CT_EXPAT_VERSION="new"
+          EOF
+          # add Ada to languages and set --disable-libada
+          sed -i -e '/CT_CC_GCC_EXTRA_CONFIG_ARRAY/s/"$/ --disable-libada"/' -e '/CT_CC_LANG_OTHERS/s/""/"ada"/' .config
+          ./ct-ng build | grep -v ' . \r?$'
+          chmod -R u+w builds/xtensa-esp32-elf
+          # make and install gnat cross tools
+          export PATH=$PWD/.build/xtensa-esp32-elf/buildtools/bin:$PATH
+          make -C .build/xtensa-esp32-elf/build/build-cc-gcc-final/gcc cross-gnattools ada.all.cross
+          make -C .build/xtensa-esp32-elf/build/build-cc-gcc-final/gcc install
+          # Add gnatgcc symlink required for Ubuntu gprbuild
+          cd builds/xtensa-esp32-elf/bin/
+          ln -v -s xtensa-esp32-elf-gcc xtensa-esp32-elf-gnatgcc
+      - name: Make archive
+        shell: bash
+        run: |
+          tar caf xtensa-esp32-elf.tar.xz -C esp/crosstool-NG/builds xtensa-esp32-elf
+      - name: Keep archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: result
+          path: xtensa-esp32-elf.tar.xz
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@2.2.1
+        if: ${{ github.ref != 'refs/heads/esp32-toolchain' }}
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: xtensa-esp32-elf.tar.xz
+          asset_name: esp32_toolchain
+          tag: ${{ github.ref }}
