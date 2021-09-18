@@ -5,6 +5,7 @@ set(OBJ
                ${COMPONENT_DIR}/.objs/esp32-spi.o
                ${COMPONENT_DIR}/.objs/esp32.o
                ${COMPONENT_DIR}/.objs/main.o
+               ${COMPONENT_DIR}/.objs/ints.o
                ${COMPONENT_DIR}/.objs/lora.o)
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
@@ -20,6 +21,7 @@ endif()
 
 idf_component_register(SRCS ".objs/b__main.o"
                             ".objs/lora.o"
+                            ".objs/ints.o"
                             ".objs/main.o"
                             ".objs/esp32-gpio.o"
                             ".objs/esp32-dport.o"

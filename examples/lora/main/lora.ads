@@ -4,6 +4,7 @@
 -------------------------------------------------------------
 
 with Interfaces;
+with Ada.Streams;
 
 generic
    with procedure Raw_Read
@@ -13,9 +14,6 @@ generic
    with procedure Raw_Write
      (Address : Interfaces.Unsigned_8;
       Value   : Interfaces.Unsigned_8);
-
-   with procedure Postpone_Execution
-     (Miliseconds : Natural);
 
 package Lora is
    pragma Pure;
@@ -27,5 +25,9 @@ package Lora is
    procedure Idle;
 
    procedure Receive;
+
+   procedure On_DIO_0_Raise
+     (Data : out Ada.Streams.Stream_Element_Array;
+      Last : out Ada.Streams.Stream_Element_Offset);
 
 end Lora;

@@ -11,36 +11,39 @@ with System;
 package body LoRa is
    pragma Discard_Names;
 
-   procedure puts
-     (data : String)
-     with Import, Convention => C, External_Name => "puts";
+   --  procedure puts
+   --    (data : String)
+   --    with Import, Convention => C, External_Name => "puts";
 
    package Address is
       type Register is mod 2 **7;
-      RegFifo   : constant Register := 16#00#;
-      RegOpMode : constant Register := 16#01#;
-      RegFrfMsb : constant Register := 16#06#;
-      RegFrfMid : constant Register := 16#07#;
-      RegFrfLsb : constant Register := 16#08#;
-      RegPaConfig : constant Register := 16#09#;
-      RegLna    : constant Register := 16#0C#;
-      RegFifoAddrPtr    : constant Register := 16#0D#;
-      RegFifoTxBaseAddr : constant Register := 16#0E#;
-      RegFifoRxBaseAddr : constant Register := 16#0F#;
-      RegFifoRxCurrentAddr : constant Register := 16#10#;
-      RegIrqFlagsMask : constant Register := 16#11#;
-      RegIrqFlags : constant Register := 16#12#;
-      RegModemConfig1 : constant Register := 16#1D#;
-      RegModemConfig2 : constant Register := 16#1E#;
-      RegSymbTimeoutLsb : constant Register := 16#1F#;
-      RegPreambleMsb : constant Register := 16#20#;
-      RegPreambleLsb : constant Register := 16#21#;
-      RegModemConfig3 : constant Register := 16#26#;
-      RegDetectOptimize : constant Register := 16#31#;
+      RegFifo               : constant Register := 16#00#;
+      RegOpMode             : constant Register := 16#01#;
+      RegFrfMsb             : constant Register := 16#06#;
+      RegFrfMid             : constant Register := 16#07#;
+      RegFrfLsb             : constant Register := 16#08#;
+      RegPaConfig           : constant Register := 16#09#;
+      RegLna                : constant Register := 16#0C#;
+      RegFifoAddrPtr        : constant Register := 16#0D#;
+      RegFifoTxBaseAddr     : constant Register := 16#0E#;
+      RegFifoRxBaseAddr     : constant Register := 16#0F#;
+      RegFifoRxCurrentAddr  : constant Register := 16#10#;
+      RegIrqFlagsMask       : constant Register := 16#11#;
+      RegIrqFlags           : constant Register := 16#12#;
+      RegRxNbBytes          : constant Register := 16#13#;
+      RegPktSnrValue        : constant Register := 16#19#;
+      RegPktRssiValue       : constant Register := 16#1A#;
+      RegModemConfig1       : constant Register := 16#1D#;
+      RegModemConfig2       : constant Register := 16#1E#;
+      RegSymbTimeoutLsb     : constant Register := 16#1F#;
+      RegPreambleMsb        : constant Register := 16#20#;
+      RegPreambleLsb        : constant Register := 16#21#;
+      RegModemConfig3       : constant Register := 16#26#;
+      RegDetectOptimize     : constant Register := 16#31#;
       RegDetectionThreshold : constant Register := 16#37#;
-      RegSyncWord : constant Register := 16#39#;
-      Version   : constant Register := 16#42#;
-      RegPaDac : constant Register := 16#4D#;
+      RegSyncWord           : constant Register := 16#39#;
+      Version               : constant Register := 16#42#;
+      RegPaDac              : constant Register := 16#4D#;
    end Address;
 
    procedure Read (Addr : Address.Register; Value : out Interfaces.Unsigned_8);
@@ -159,6 +162,35 @@ package body LoRa is
    function To_Byte is new Ada.Unchecked_Conversion
      (RegRxConfig, Interfaces.Unsigned_8);
 
+   type RegIrqFlags is record
+      RxTimeout         : Boolean;
+      RxDone            : Boolean;
+      PayloadCrcError   : Boolean;
+      ValidHeader       : Boolean;
+      TxDone            : Boolean;
+      CadDone           : Boolean;
+      FhssChangeChannel : Boolean;
+      CadDetected       : Boolean;
+   end record
+     with Size => 8;
+
+   for RegIrqFlags use record
+      RxTimeout         at 0 range 7 .. 7;
+      RxDone            at 0 range 6 .. 6;
+      PayloadCrcError   at 0 range 5 .. 5;
+      ValidHeader       at 0 range 4 .. 4;
+      TxDone            at 0 range 3 .. 3;
+      CadDone           at 0 range 2 .. 2;
+      FhssChangeChannel at 0 range 1 .. 1;
+      CadDetected       at 0 range 0 .. 0;
+   end record;
+
+   function To_Byte is new Ada.Unchecked_Conversion
+     (RegIrqFlags, Interfaces.Unsigned_8);
+
+   function From_Byte is new Ada.Unchecked_Conversion
+     (Interfaces.Unsigned_8, RegIrqFlags);
+
    type RegModemConfig1 is record
       Bw                   : Natural range 0 .. 15;
       CodingRate           : Natural range 0 .. 7;
@@ -251,7 +283,7 @@ package body LoRa is
       --  Frequency synthesizer step = FSOSC/FSTEP_Divider
       Frf : constant Interfaces.Unsigned_64 :=
         Interfaces.Unsigned_64 (Frequency) * FSTEP_Divider / FXOSC;
-      --
+
       Value : Interfaces.Unsigned_8;
 
    begin
@@ -269,14 +301,6 @@ package body LoRa is
       --  set base addresses
       Write (Address.RegFifoTxBaseAddr, 0);
       Write (Address.RegFifoRxBaseAddr, 0);
-
-      Read (Address.RegFrfMsb, Value);
-      puts ("msb=" & Value'Image & Character'Val (0));
-      Read (Address.RegFrfMid, Value);
-      puts ("mid=" & Value'Image & Character'Val (0));
-      Read (Address.RegFrfLsb, Value);
-      puts ("lsb=" & Value'Image & Character'Val (0));
-
 
       --  set LNA boost
       declare
@@ -340,12 +364,52 @@ package body LoRa is
       Write (Address.RegPreambleMsb, 0);
       Write (Address.RegPreambleLsb, 8);
 
-      Write (Address.RegSymbTimeoutLsb, 255);
+--      Write (Address.RegSymbTimeoutLsb, 255);
 
-      Write (16#40#, 2#11_11_11_11#);
+      Write (16#40#, 0);
 
       Idle;
    end Initialize;
+
+   --------------------
+   -- On_DIO_0_Raise --
+   --------------------
+
+   procedure On_DIO_0_Raise
+     (Data : out Ada.Streams.Stream_Element_Array;
+      Last : out Ada.Streams.Stream_Element_Offset)
+   is
+      use type Ada.Streams.Stream_Element_Offset;
+
+      Length    : Interfaces.Unsigned_8;
+      Value     : Interfaces.Unsigned_8;
+      IRQ_Flags : aliased Interfaces.Unsigned_8;
+      Flags     : RegIrqFlags
+        with Import, Address => IRQ_Flags'Address;
+   begin
+      Last := Data'First - 1;
+      Read (Address.RegIrqFlags, IRQ_Flags);
+      --  Clear IRQ flags
+      Write (Address.RegIrqFlags, IRQ_Flags);
+
+      if not Flags.PayloadCrcError then
+         Read (Address.RegRxNbBytes, Length);
+         Read (Address.RegFifoRxCurrentAddr, Value);
+         Write (Address.RegFifoAddrPtr, Value);
+
+         for J in 1 .. Length loop
+            Read (Address.RegFifo, Value);
+            Last := Last + 1;
+            Data (Last) := Ada.Streams.Stream_Element (Value);
+         end loop;
+
+         --  Write (Address.RegFifoAddrPtr, 0); why ???
+      end if;
+   end On_DIO_0_Raise;
+
+   ----------
+   -- Read --
+   ----------
 
    procedure Read
      (Addr  : Address.Register;
@@ -365,31 +429,11 @@ package body LoRa is
         (LongRangeMode      => True,
          AccessSharedReg    => False,
          LowFrequencyModeOn => False,
-         LoRa_Mode          => Receive_Single);  --  Receive_Continuous);
+         LoRa_Mode          => Receive_Continuous);  --  Receive_Single);
 
-      Hex   : constant array (Interfaces.Unsigned_8 range 0 .. 15) of Character
-        := "0123456789ABCDEF";
-      Text  : String (1 .. 3) := (1 .. 3 => Character'Val (0));
-      Value : Interfaces.Unsigned_8;
-      Next  : Interfaces.Unsigned_8;
    begin
-      Read (Address.RegIrqFlags, Value);
       Write (Address.RegFifoAddrPtr, 0);
       Write (Address.RegOpMode, To_Byte (Mode));
-
-      loop
-         Text (1) := Hex (Value / 16);
-         Text (2) := Hex (Value mod 16);
-         puts (Text);
-
-         loop
-            Read (Address.RegIrqFlags, Next);
-            exit when Next /= Value;
-            Postpone_Execution (1);
-         end loop;
-
-         Value := Next;
-      end loop;
    end Receive;
 
    -----------

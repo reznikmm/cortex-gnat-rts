@@ -13,6 +13,7 @@ with ESP32.DPort;
 with ESP32.SPI;
 
 with Lora;
+with Ints;
 
 procedure Main
   with No_Return
@@ -37,8 +38,6 @@ is
    procedure Write
      (Address : Interfaces.Unsigned_8;
       Value   : Interfaces.Unsigned_8);
-
-   procedure Postpone_Execution (Miliseconds : Natural);
 
    ----------
    -- Read --
@@ -75,13 +74,7 @@ is
          MOSI    => Buffer);
    end Write;
 
-   procedure Postpone_Execution (Miliseconds : Natural) is
-   begin
-      delay until Ada.Real_Time.Clock
-        + Ada.Real_Time.Milliseconds (Miliseconds);
-   end Postpone_Execution;
-
-   package Lora_SPI is new Lora (Read, Write, Postpone_Execution);
+   package Lora_SPI is new Lora (Read, Write);
 
    Button : constant := 0;   --  Button pad
    LED    : constant := 25;  --  LED pad
@@ -114,12 +107,12 @@ begin
        (Pad       => 26,  --  <-- LoRa DIO0
         IO_MUX    => ESP32.GPIO.GPIO_Matrix,
         Direction => ESP32.GPIO.Input,
-        Interrupt => ESP32.GPIO.Disabled,
+        Interrupt => ESP32.GPIO.Rising_Edge,
         Input     => ESP32.GPIO.None),
        (Pad       => 35,  --  <-- LoRa DIO1
         IO_MUX    => ESP32.GPIO.GPIO_Matrix,
         Direction => ESP32.GPIO.Input,
-        Interrupt => ESP32.GPIO.Disabled,
+        Interrupt => ESP32.GPIO.Rising_Edge,
         Input     => ESP32.GPIO.None),
        (Pad       => 34,  --  <-- LoRa DIO2
         IO_MUX    => ESP32.GPIO.GPIO_Matrix,
@@ -155,11 +148,38 @@ begin
    LoRa_SPI.Receive;
 
    for J in 1 .. 1E9 loop
-      --  Turl LED if button is not pressed
-      ESP32.GPIO.Set_Level
-        (LED, (J mod 2 = 1) and ESP32.GPIO.Get_Level (Button));
+      declare
+         use type Ada.Streams.Stream_Element_Count;
 
-      delay until Ada.Real_Time.Clock + Ada.Real_Time.Seconds (1);
+         type Packet is record
+            Lat    : Interfaces.Integer_32;
+            Lng    : Interfaces.Integer_32;
+            Tm_Sat : Interfaces.Unsigned_16;
+            Power  : Interfaces.Unsigned_8;
+         end record;
+
+         RX_Done    : Boolean;
+         RX_Timeout : Boolean;
+
+         Data   : Packet;
+         Last   : Ada.Streams.Stream_Element_Count;
+         Buffer : Ada.Streams.Stream_Element_Array (1 .. 12)
+           with Import, Address => Data'Address;
+      begin
+         Ints.Signal.Wait (RX_Done, RX_Timeout);
+         puts (RX_Done'Image & " " & RX_Timeout'Image & Character'Val (0));
+
+         if RX_Done then
+            Lora_SPI.On_DIO_0_Raise (Buffer, Last);
+            if Last = Buffer'Last then
+               puts (Data.Lat'Image &
+                     Data.Lng'Image &
+                     Data.Tm_Sat'Image &
+                     Data.Power'Image &
+                       Character'Val (0));
+            end if;
+         end if;
+      end;
    end loop;
 
   --  NOTE:
