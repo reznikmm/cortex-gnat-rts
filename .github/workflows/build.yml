@@ -1,0 +1,16 @@
+on:
+  push:
+name: Build examples
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Get esp32-gnat-rts
+        uses: actions/checkout@v2
+      - name: Build examples
+        shell: bash
+        run: |
+          set -x
+          docker run --rm -v $PWD:/esp32-gnat-rts -w /esp32-gnat-rts/examples/hello_world/ reznik/gnat:idf-v4.3.1 idf.py build
+          docker run --rm -v $PWD:/esp32-gnat-rts -w /esp32-gnat-rts/examples/gpio/        reznik/gnat:idf-v4.3.1 idf.py build
+          docker run --rm -v $PWD:/esp32-gnat-rts -w /esp32-gnat-rts/examples/interrupt/   reznik/gnat:idf-v4.3.1 idf.py build

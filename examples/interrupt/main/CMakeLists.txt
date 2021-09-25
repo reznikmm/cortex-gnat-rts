@@ -9,8 +9,6 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
   # Compile Ada file and run binder
   add_custom_command(OUTPUT ${OBJ}
      COMMAND gprbuild -b -c -p -P ${COMPONENT_DIR}/interrupt.gpr
-               --db ${COMPONENT_DIR}/gprconfig
-               --autoconf=${BUILD_DIR}/config.cgpr
                --RTS=${BUILD_DIR}/rts
      DEPENDS interrupt.gpr interrupt.adb handlers.ads handlers.adb
      VERBATIM)

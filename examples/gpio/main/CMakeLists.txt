@@ -8,8 +8,6 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
   # Compile Ada file and run binder
   add_custom_command(OUTPUT ${OBJ}
      COMMAND gprbuild -b -c -p -P ${COMPONENT_DIR}/blink.gpr
-               --db ${COMPONENT_DIR}/gprconfig
-               --autoconf=${BUILD_DIR}/config.cgpr
                --RTS=${BUILD_DIR}/rts
      DEPENDS blink.gpr blink.adb
      VERBATIM)

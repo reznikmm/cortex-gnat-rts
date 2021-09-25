@@ -57,7 +57,7 @@ and unpack and replace toolchain (look into
 Alternatively, build it from sources as described
 [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/toolchain-setup-scratch.html)
 and
-[here](https://github.com/RREE/esp8266-ada/wiki/Steps-for-building-on-Linux).
+[here](https://github.com/crosstool-ng/crosstool-ng/issues/1216#issuecomment-539230302).
 
 ### Install `gprbuild` project manager
 
@@ -70,6 +70,21 @@ Use GNAT Community Edition or install a native package:
 Clone the repository:
 
     git clone https://github.com/reznikmm/esp32-gnat-rts.git
+
+## Docker alternative
+
+You can use Docker image to simplify installation. We provide
+[IDF Docker Image](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-docker-image.html)
+with replaced the toolchain.
+
+Here is the example how to clone ESP GNAT Runtime and build the example:
+
+```
+git clone https://github.com/reznikmm/esp32-gnat-rts.git
+cd esp32-gnat-rts
+docker run --rm -v $PWD:/esp32-gnat-rts -w /esp32-gnat-rts/examples/hello_world/ reznik/gnat:idf-v4.3.1 idf.py build
+```
+
 
 # Usage
 
