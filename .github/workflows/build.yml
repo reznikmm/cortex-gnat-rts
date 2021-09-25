@@ -65,6 +65,7 @@ jobs:
           tar caf xtensa-esp32-elf.tar.xz -C esp/crosstool-NG/builds xtensa-esp32-elf
       - name: Keep archive
         uses: actions/upload-artifact@v2
+        if: ${{ github.ref == 'refs/heads/esp32-toolchain' }}
         with:
           name: result
           path: xtensa-esp32-elf.tar.xz
