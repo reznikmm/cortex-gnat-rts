@@ -17,6 +17,7 @@ test
 doc
 cortex-gnat-rts*
 .DS_Store
+*~
 
 auto.cgpr
 gnatinspect.db
@@ -24,6 +25,7 @@ gpr_query.*
 
 local/
 examples/*/build/
+examples/*/sdkconfig
 
 demos-arduino-due/debounce_hardware
 demos-arduino-due/debounce_software
