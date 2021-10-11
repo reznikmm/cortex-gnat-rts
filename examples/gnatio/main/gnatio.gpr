@@ -1,0 +1,10 @@
+--  SPDX-FileCopyrightText: 2021 Max Reznik <reznikmm@gmail.com>
+--
+--  SPDX-License-Identifier: MIT
+-------------------------------------------------------------
+
+project Gnatio is
+   for Target use "xtensa-esp32-elf";
+   for Main use ("gnatio.adb");
+   for Object_Dir use ".objs";
+end Gnatio;
