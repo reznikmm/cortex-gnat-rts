@@ -42,10 +42,18 @@ package body GNAT.IO is
    ---------
 
    procedure Get (C : out Character) is
-      --  function Get_Char return Character;
-      --  pragma Import (C, Get_Char, "get_char");
+      function Get_Char return Character
+      is
+         procedure uart_rx_one_char (Val : in out Integer);
+         pragma Import (C, uart_rx_one_char, "uart_rx_one_char");
+         V : Integer;
+      begin
+         uart_rx_one_char (V);
+         return Character'Val(V);
+      end;
+
    begin
-      C := '@'; --  Get_Char;
+      C := Get_Char;
    end Get;
 
    --------------
