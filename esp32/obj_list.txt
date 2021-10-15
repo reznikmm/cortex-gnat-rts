@@ -58,6 +58,7 @@ esp32/.objs/a-uncdea.o;
 esp32/.objs/ada.o;
 esp32/.objs/environment_task.o;
 esp32/.objs/g-crc32.o;
+esp32/.objs/g-io.o;
 esp32/.objs/g-souinf.o;
 esp32/.objs/gnat.o;
 esp32/.objs/i-c.o;
